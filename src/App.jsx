@@ -18,26 +18,42 @@ const App = () => {
     setWeather(newWeatherState)
   } 
 
-  useEffect(() => {
-    const fetchDefaultData = async (city) => {
-      const data = await weatherService.show(city)
+useEffect(() => {
+  const fetchDefaultData = async (city) => {
+    try {
+      const data = await weatherService.show(city);
+      console.log('Raw weather data:', data); // 👀 check what you're getting back
+
+      if (!data || !data.location) {
+        throw new Error('Invalid response from weather API');
+      }
+
       const newWeatherState = {
         location: data.location.name,
         temperature: data.current.temp_f,
         condition: data.current.condition.text,
       };
-      setWeather(newWeatherState)
-    } 
 
-    navigator.geolocation.getCurrentPosition(
-      function(result) {
-        const lat = result.coords.latitude;
-        const long = result.coords.longitude;
-        const locationString = `${lat}, ${long}`
-        fetchDefaultData(locationString)
-      }, function(error) {console.error(error)})
-      
-  }, [])
+      setWeather(newWeatherState);
+    } catch (err) {
+      console.error('Failed to fetch weather data:', err);
+    }
+  };
+
+  navigator.geolocation.getCurrentPosition(
+    (result) => {
+      const lat = result.coords.latitude;
+      const long = result.coords.longitude;
+      const locationString = `${lat}, ${long}`;
+      fetchDefaultData(locationString);
+    },
+    (error) => {
+      console.error('Geolocation failed:', error);
+      // Optional fallback:
+      fetchDefaultData('Salt Lake City');
+    }
+  );
+}, []);
 
   useEffect(() => {
     const condition = weather.condition?.toLowerCase();
